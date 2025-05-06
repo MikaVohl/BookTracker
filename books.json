@@ -1,0 +1,14 @@
+{
+  "books": [
+    {
+      "id": 1,
+      "name": "The Stranger",
+      "author": "Albert Camus"
+    },
+    {
+      "id": 2,
+      "name": "Notes from Underground",
+      "author": "Fyodor Dostoevsky"
+    }
+  ]
+}
