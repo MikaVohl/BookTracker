@@ -9,6 +9,11 @@
       "id": 2,
       "name": "Notes from Underground",
       "author": "Fyodor Dostoevsky"
+    },
+    {
+      "id": 3,
+      "name": "Brave New World",
+      "author": "Aldous Huxley"
     }
   ]
 }

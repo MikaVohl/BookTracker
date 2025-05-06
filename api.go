@@ -54,38 +54,65 @@ func saveBooks(books Books) {
 	}
 }
 
-func listBooks() {
-	books := loadBooks()
-
-	for _, book := range books.Books {
-		fmt.Println(book.ID)
-		fmt.Println(book.Name)
-		fmt.Println(book.Author)
-	}
+func listBooks() Books {
+	return loadBooks()
 }
 
-func addBook(id int, name string, author string) {
-	book := Book{ID: id, Name: name, Author: author}
+func addBook(book Book) {
 	books := loadBooks()
 	books.Books = append(books.Books, book)
 	saveBooks(books)
 }
 
 func main() {
-	listBooks()
-	addBook(2, "Notes from Underground", "Fyodor Dostoevsky")
-	listBooks()
 	// register handler
-	// http.HandleFunc("/api/books", booksHandler)
+	http.HandleFunc("/api/books", booksHandler)
+	http.HandleFunc("/api/addBook", addBookHandler)
 
-	// // start server on port 8080
-	// log.Println("Listening on http://localhost:8080")
-	// if err := http.ListenAndServe(":8080", nil); err != nil { // initialize var; check condition
-	// 	log.Fatal(err)
-	// }
+	// start server on port 8080
+	log.Println("Listening on http://localhost:8080")
+	if err := http.ListenAndServe(":8080", nil); err != nil { // initialize var; check condition
+		log.Fatal(err)
+	}
 }
 
-func booksHandler(http.ResponseWriter, *http.Request) {
-	fmt.Println("received")
-	return
+func booksHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	books := listBooks()
+	w.Header().Set("Content-Type", "application/json")
+
+	if err := json.NewEncoder(w).Encode(books); err != nil {
+		http.Error(w, "could not encode books", http.StatusInternalServerError)
+		return
+	}
+}
+
+func addBookHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	defer r.Body.Close()
+
+	var b Book
+	if err := json.NewDecoder(r.Body).Decode(&b); err != nil {
+		if err == io.EOF {
+			http.Error(w, "empty body", http.StatusBadRequest)
+		} else {
+			http.Error(w, "invalid JSON: "+err.Error(), http.StatusBadRequest)
+		}
+		return
+	}
+
+	addBook(b)
+	books := listBooks()
+	w.Header().Set("Content-Type", "application/json")
+
+	if err := json.NewEncoder(w).Encode(books); err != nil {
+		http.Error(w, "could not encode books", http.StatusInternalServerError)
+		return
+	}
 }
