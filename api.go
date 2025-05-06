@@ -14,9 +14,10 @@ type Books struct {
 }
 
 type Book struct {
-	ID     int    `json:"id"`
-	Name   string `json:"name"`
-	Author string `json:"author"`
+	ID       int    `json:"id"`
+	Name     string `json:"name"`
+	Author   string `json:"author"`
+	Finished bool   `json:"finished"`
 }
 
 func loadBooks() Books {
@@ -64,6 +65,15 @@ func addBook(book Book) {
 	saveBooks(books)
 }
 
+func maxId() int {
+	id := 0
+	books := loadBooks()
+	for _, element := range books.Books {
+		id = max(id, element.ID)
+	}
+	return id
+}
+
 func main() {
 	// register handler
 	http.HandleFunc("/api/books", booksHandler)
@@ -107,6 +117,8 @@ func addBookHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	id := maxId() + 1
+	b.ID = id
 	addBook(b)
 	books := listBooks()
 	w.Header().Set("Content-Type", "application/json")

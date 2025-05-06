@@ -3,17 +3,32 @@
     {
       "id": 1,
       "name": "The Stranger",
-      "author": "Albert Camus"
+      "author": "Albert Camus",
+      "finished": true
     },
     {
       "id": 2,
       "name": "Notes from Underground",
-      "author": "Fyodor Dostoevsky"
+      "author": "Fyodor Dostoevsky",
+      "finished": false
     },
     {
       "id": 3,
       "name": "Brave New World",
-      "author": "Aldous Huxley"
+      "author": "Aldous Huxley",
+      "finished": false
+    },
+    {
+      "id": 4,
+      "name": "The Hobbit",
+      "author": "J. R. R. Tolkien",
+      "finished": true
+    },
+    {
+      "id": 5,
+      "name": "Lord of the Rings",
+      "author": "J. R. R. Tolkien",
+      "finished": false
     }
   ]
 }
