@@ -24,10 +24,10 @@ type Book struct {
 	Finished bool   `json:"finished"`
 }
 
-func writeJSON(w http.ResponseWriter, status int, v interface{}) {
+func writeJSON(w http.ResponseWriter, status int, v interface{}) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(v)
+	return json.NewEncoder(w).Encode(v)
 }
 
 func (a *App) ListBooks(ctx context.Context) ([]Book, error) {
@@ -41,7 +41,7 @@ func (a *App) ListBooks(ctx context.Context) ([]Book, error) {
 	for rows.Next() {
 		var b Book
 		if err := rows.Scan(&b.ID, &b.Name, &b.Author, &b.Finished); err != nil {
-			return books, err
+			return nil, err
 		}
 		books = append(books, b)
 	}
@@ -93,9 +93,8 @@ func (a *App) booksHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "internal error", http.StatusInternalServerError)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
 
-		if err := json.NewEncoder(w).Encode(books); err != nil {
+		if err := writeJSON(w, http.StatusOK, books); err != nil {
 			http.Error(w, "could not encode books", http.StatusInternalServerError)
 			return
 		}
@@ -122,11 +121,9 @@ func (a *App) booksHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Location", fmt.Sprintf("/api/books/%d", b.ID))
-		w.WriteHeader(http.StatusCreated)
 
-		if err := json.NewEncoder(w).Encode(b); err != nil {
+		if err := writeJSON(w, http.StatusCreated, b); err != nil {
 			http.Error(w, "could not encode response", http.StatusInternalServerError)
 		}
 
