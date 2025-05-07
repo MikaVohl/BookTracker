@@ -7,7 +7,6 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -27,43 +26,25 @@ type Book struct {
 	Finished bool   `json:"finished"`
 }
 
-func loadBooks() Books {
-	f, err := os.Open("books.json")
-	if err != nil {
-		fmt.Println("Error opening json:")
-		log.Fatal(err)
-	}
-	defer f.Close()
-
-	data, err := io.ReadAll(f)
-	if err != nil {
-		fmt.Println("Error reading json:")
-		log.Fatal(err)
-	}
-
-	var books Books
-	if err := json.Unmarshal(data, &books); err != nil {
-		fmt.Println("Error decoding json:")
-		log.Fatal(err)
-	}
-	return books
-}
-
-func saveBooks(books Books) {
-	out, err := json.MarshalIndent(books, "", "  ")
-	if err != nil {
-		fmt.Println("JSON marshal error:")
-		log.Fatal(err)
-	}
-
-	if err := os.WriteFile("books.json", out, 0644); err != nil {
-		fmt.Println("Write file error:")
-		log.Fatal(err)
-	}
-}
-
 func listBooks(db *sql.DB) Books {
-	return loadBooks()
+	rows, err := db.Query("SELECT id, name, author, finished FROM Books")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer rows.Close()
+
+	var books []Book
+	for rows.Next() {
+		var b Book
+		if err := rows.Scan(&b.ID, &b.Name, &b.Author, &b.Finished); err != nil {
+			log.Fatal(err)
+		}
+		books = append(books, b)
+	}
+	if err := rows.Err(); err != nil {
+		log.Fatal(err)
+	}
+	return Books{Books: books}
 }
 
 func addBook(name string, author string, finished bool, db *sql.DB) {
@@ -71,15 +52,6 @@ func addBook(name string, author string, finished bool, db *sql.DB) {
 	if err != nil {
 		log.Fatal(err)
 	}
-}
-
-func maxId() int {
-	id := 0
-	books := loadBooks()
-	for _, element := range books.Books {
-		id = max(id, element.ID)
-	}
-	return id
 }
 
 func main() {
