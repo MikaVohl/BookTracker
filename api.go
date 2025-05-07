@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -64,26 +63,14 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	_, err = db.Exec("INSERT INTO Books(id, name, author, finished) VALUES (?, ?, ?, ?)", 1, "The Stranger", "Albert Camus", 1)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	row := db.QueryRow("SELECT name FROM Books WHERE id = 1")
-	var name string
-	if err := row.Scan(&name); err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(name)
 
 	app := &App{DB: db}
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/books", app.booksHandler)
 	mux.HandleFunc("/api/addBook", app.addBookHandler)
 
-	// start server on port 8080
 	log.Println("Listening on http://localhost:8080")
-	if err := http.ListenAndServe(":8080", nil); err != nil { // initialize var; check condition
+	if err := http.ListenAndServe(":8080", mux); err != nil { // initialize var; check condition
 		log.Fatal(err)
 	}
 }
