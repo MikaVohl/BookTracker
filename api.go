@@ -14,10 +14,6 @@ type App struct {
 	DB *sql.DB
 }
 
-type Books struct {
-	Books []Book `json:"books"`
-}
-
 type Book struct {
 	ID       int    `json:"id"`
 	Name     string `json:"name"`
@@ -25,10 +21,10 @@ type Book struct {
 	Finished bool   `json:"finished"`
 }
 
-func listBooks(db *sql.DB) Books {
-	rows, err := db.Query("SELECT id, name, author, finished FROM Books")
+func (a *App) listBooks() ([]Book, error) {
+	rows, err := a.DB.Query("SELECT id, name, author, finished FROM Books")
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	defer rows.Close()
 
@@ -36,21 +32,19 @@ func listBooks(db *sql.DB) Books {
 	for rows.Next() {
 		var b Book
 		if err := rows.Scan(&b.ID, &b.Name, &b.Author, &b.Finished); err != nil {
-			log.Fatal(err)
+			return books, err
 		}
 		books = append(books, b)
 	}
 	if err := rows.Err(); err != nil {
-		log.Fatal(err)
+		return books, err
 	}
-	return Books{Books: books}
+	return books, nil
 }
 
-func addBook(name string, author string, finished bool, db *sql.DB) {
-	_, err := db.Exec("INSERT INTO Books(name, author, finished) VALUES (?, ?, ?)", name, author, finished)
-	if err != nil {
-		log.Fatal(err)
-	}
+func (a *App) addBook(name string, author string, finished bool) error {
+	_, err := a.DB.Exec("INSERT INTO Books(name, author, finished) VALUES (?, ?, ?)", name, author, finished)
+	return err
 }
 
 func main() {
@@ -80,7 +74,11 @@ func (a *App) booksHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	books := listBooks(a.DB)
+	books, err := a.listBooks()
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 
 	if err := json.NewEncoder(w).Encode(books); err != nil {
@@ -105,8 +103,16 @@ func (a *App) addBookHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	addBook(b.Name, b.Author, b.Finished, a.DB)
-	books := listBooks(a.DB)
+	err := a.addBook(b.Name, b.Author, b.Finished)
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
+	books, err := a.listBooks()
+	if err != nil {
+		http.Error(w, "internal error", http.StatusInternalServerError)
+		return
+	}
 	w.Header().Set("Content-Type", "application/json")
 
 	if err := json.NewEncoder(w).Encode(books); err != nil {
